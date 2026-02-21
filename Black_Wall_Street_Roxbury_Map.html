@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="initial-scale=1" />
+<title>Boston Black Historical Geography</title>
+
+<link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/dark/main.css">
+<script src="https://js.arcgis.com/4.29/"></script>
+
+<style>
+html, body, #viewDiv {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background-color: #1c1c1c;
+  font-family: "Segoe UI", sans-serif;
+}
+
+#downloadBtn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 99;
+  padding: 8px 14px;
+  background: #3a7ca5;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+</style>
+</head>
+
+<body>
+
+<button id="downloadBtn">Download Live Map</button>
+<div id="viewDiv"></div>
+
+<script>
+require([
+  "esri/Map",
+  "esri/views/MapView",
+  "esri/layers/FeatureLayer",
+  "esri/widgets/LayerList",
+  "esri/widgets/Legend"
+], function(Map, MapView, FeatureLayer, LayerList, Legend) {
+
+  // -------- Redlining Layer (Pro-style colors) --------
+  const redliningLayer = new FeatureLayer({
+    url: "https://services1.arcgis.com/KUeKSLlMUcWvuPRM/arcgis/rest/services/Boston_redlining/FeatureServer/0",
+    title: "Boston Redlining (HOLC 1930s)",
+    opacity: 0.85,
+    renderer: {
+      type: "unique-value",
+      field: "grade",
+      uniqueValueInfos: [
+        { value: "A", label: "A - Best", symbol:{type:"simple-fill",color:"#2E8B57",outline:{color:"white",width:0.5}}},
+        { value: "B", label: "B - Still Desirable", symbol:{type:"simple-fill",color:"#4C78A8",outline:{color:"white",width:0.5}}},
+        { value: "C", label: "C - Declining", symbol:{type:"simple-fill",color:"#E0A800",outline:{color:"white",width:0.5}}},
+        { value: "D", label: "D - Hazardous", symbol:{type:"simple-fill",color:"#B22222",outline:{color:"white",width:0.5}}}
+      ]
+    }
+  });
+
+  // -------- Roxbury Boundary --------
+  const roxburyBoundary = new FeatureLayer({
+    url: "https://services.arcgis.com/sFnw0xNflSi8J0uh/arcgis/rest/services/Roxbury_callout/FeatureServer/0",
+    title: "Roxbury Boundary",
+    renderer: {
+      type: "simple",
+      symbol: {
+        type: "simple-fill",
+        color: [0,0,0,0],
+        outline: { color: "#ffffff", width: 1.5 }
+      }
+    }
+  });
+
+  // -------- Helper Function for Point Layers --------
+  function createPointLayer(url, title, color) {
+    return new FeatureLayer({
+      url: url,
+      title: title,
+      renderer: {
+        type: "simple",
+        symbol: {
+          type: "simple-marker",
+          style: "circle",
+          size: 6,
+          color: color,
+          outline: { color: "#ffffff", width: 0.8 }
+        }
+      }
+    });
+  }
+
+  const souvenirLayer = createPointLayer(
+    "https://services1.arcgis.com/KUeKSLlMUcWvuPRM/arcgis/rest/services/Souvenir_points/FeatureServer/0",
+    "1915 National Negro Business League",
+    "#17becf"
+  );
+
+  const directoryLayer = createPointLayer(
+    "https://services1.arcgis.com/KUeKSLlMUcWvuPRM/arcgis/rest/services/Directory_location_points/FeatureServer/0",
+    "1914 Directory Locations",
+    "#bc5090"
+  );
+
+  const greenBookLayer = createPointLayer(
+    "https://services1.arcgis.com/KUeKSLlMUcWvuPRM/arcgis/rest/services/Green_book/FeatureServer/0",
+    "1938–1967 Negro Motorist Green Book",
+    "#2ca02c"
+  );
+
+  const concertLayer = createPointLayer(
+    "https://services1.arcgis.com/KUeKSLlMUcWvuPRM/arcgis/rest/services/concert_florence_points/FeatureServer/0",
+    "1921 Florence Cole Talbert Program",
+    "#ff7f0e"
+  );
+
+  const hotelLayer = createPointLayer(
+    "https://services1.arcgis.com/KUeKSLlMUcWvuPRM/arcgis/rest/services/massachusetts_hotels_Negro_/FeatureServer/0",
+    "1940 Massachusetts Negro Hotels",
+    "#f1c40f"
+  );
+
+  // -------- Map Setup --------
+  const map = new Map({
+    basemap: "dark-gray-vector",
+    layers: [
+      redliningLayer,
+      roxburyBoundary,
+      souvenirLayer,
+      directoryLayer,
+      greenBookLayer,
+      concertLayer,
+      hotelLayer
+    ]
+  });
+
+  const view = new MapView({
+    container: "viewDiv",
+    map: map,
+    center: [-71.083, 42.325],
+    zoom: 12
+  });
+
+  view.ui.add(new LayerList({ view: view }), "top-right");
+  view.ui.add(new Legend({ view: view }), "bottom-left");
+
+});
+
+// -------- Download Button --------
+document.getElementById("downloadBtn").addEventListener("click", function() {
+  const htmlContent = document.documentElement.outerHTML;
+  const blob = new Blob([htmlContent], {type: "text/html"});
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "Boston_Live_Map.html";
+  link.click();
+});
+</script>
+
+</body>
+</html>
